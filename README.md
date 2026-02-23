@@ -174,7 +174,7 @@ As demonstrated in the Grafana dashboard above, the integration of Redis provide
 ### Locust Load Test
 To validate the system's stability under heavy concurrency, a sustained load test was performed using **Locust**. The goal was to simulate real-world traffic with a high number of concurrent users.
 
-<div align="center">
+<div align="left">
   <img src="docs/images/locust/load_test_results.png" alt="Locust Load Test Results" width="800">
   <p><em>Figure: System stability under 1000 concurrent users (~81 RPS)</em></p>
 </div>
