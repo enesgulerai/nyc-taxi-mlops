@@ -3,22 +3,26 @@
 # -------------------------------------------------------------------
 FROM python:3.11-slim as builder
 
+# Prevent Python from writing .pyc files and buffering stdout
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a virtual environment
 RUN python -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY src/api/requirements.txt .
+# Copy requirements
+COPY requirements/frontend.txt .
 
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r frontend.txt
 
 # -------------------------------------------------------------------
 # STAGE 2: RUNTIME
@@ -27,25 +31,29 @@ FROM python:3.11-slim as runtime
 
 WORKDIR /app
 
-# Create non-root user
 RUN groupadd -r appgroup && useradd -r -g appgroup -u 1000 appuser
 
-# Copy virtual environment
+RUN mkdir -p /home/appuser && chown -R appuser:appgroup /home/appuser
+
+# Copy virtual env
 COPY --from=builder /app/.venv /app/.venv
 
-# Set environment variables
+# Update PATH
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
+ENV HOME=/home/appuser
 
-# Copy application code and models with correct permissions
-COPY --chown=appuser:appgroup src/ ./src/
-COPY --chown=appuser:appgroup models/ ./models/
+# Copy source code
+COPY --chown=appuser:appgroup src/frontend/ ./src/frontend/
 
-RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+# Ensure /app ownership is correct
+RUN chown -R appuser:appgroup /app
 
-# Switch to non-root user
+# Switch user
 USER appuser
 
-EXPOSE 8000
+# Expose port
+EXPOSE 8501
 
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run application
+CMD ["streamlit", "run", "src/frontend/ui.py", "--server.port=8501", "--server.address=0.0.0.0"]
