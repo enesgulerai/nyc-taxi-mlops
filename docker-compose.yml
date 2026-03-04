@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: src/api/Dockerfile
     container_name: nyc_taxi_api
-    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --worker 4
     ports:
       - "8000:8000"
     volumes:

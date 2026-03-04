@@ -42,7 +42,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f src/api/Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "✅ API pushed to ECR"
+        echo "API pushed to ECR"
 
     - name: Build & Push Frontend
       env:
@@ -52,4 +52,28 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f src/frontend/Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "✅ Frontend pushed to ECR"
+        echo "Frontend pushed to ECR"
+
+    # --- AUTOMATED DEPLOYMENT TO EC2 ---
+    - name: Deploy to AWS EC2 via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        envs: ECR_REGISTRY
+        script: |
+          echo "Deploying new images to EC2..."
+          
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          
+          docker pull $ECR_REGISTRY/nyc-taxi-api:latest
+          docker pull $ECR_REGISTRY/nyc-taxi-frontend:latest
+          
+          cd /home/ubuntu/nyc-taxi-mlops
+          docker-compose down
+          docker-compose up -d
+          
+          echo "Deployment Successful! Zero manual work."
