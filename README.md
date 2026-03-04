@@ -102,7 +102,7 @@ The `make train` (or `make start-all-k8s`) command automatically:
 ---
 ## 🛠️ Installation & Usage
 
-![Streamlit Using Example](docs/images/ui/Streamlit_Usage.gif)
+![Streamlit Using Example](docs/images/ui/streamlit_usage.gif)
 
 ### Option 1: Docker Compose (Recommended for Testing)
 Run the entire stack (API + UI + Redis) with a single command:
@@ -176,7 +176,7 @@ To validate the system's stability under heavy concurrency, a sustained load tes
 
 <div align="left">
   <img src="docs/images/locust/load_test_results.png" alt="Locust Load Test Results" width="800">
-  <p><em>Figure: System stability under 1000 concurrent users (~81 RPS)</em></p>
+  <p><em>Figure: System stability under 1000 concurrent users (~292 RPS)</em></p>
 </div>
 
 * **Tool:** Locust
@@ -190,9 +190,9 @@ Despite the high concurrency on a local environment, the system maintained **100
 | Metric | Result | Insight |
 | :--- | :--- | :--- |
 | **Active Users** | **1,000** | Massive parallel user simulation |
-| **Throughput** | **~81 req/sec** | ~4,860 requests per minute |
-| **Failure Rate** | **0%** | **Zero crashes or dropped connections** |
-| **Avg. Latency** | **~6,995 ms** | High due to local hardware limits, but stable |
+| **Throughput** | **~292 req/sec** | ~17,520 requests per minute |
+| **Failure Rate** | **0%** | Zero crashes or dropped connections |
+| **Avg. Latency** | **~1,030 ms** | High due to local hardware limits, but stable |
 
 > **Key Takeaway:** The system successfully managed 1,000 simultaneous connections without crashing. While the latency increased due to resource constraints (CPU/RAM) on the local test machine, the **zero-failure rate** proves the robustness of the architecture.
 ---
@@ -221,7 +221,7 @@ The entire system is deployed on **AWS EC2 (eu-central-1)**, utilizing a secure 
 
 ### 1. Live Application (Streamlit on EC2)
 The application is accessible via the Public IPv4 address of the EC2 instance on port `8501`.
-![AWS Live App](docs/images/aws/aws-1.png)
+![AWS Live App](docs/images/ui/streamlit_usage.gif)
 
 ### 2. Compute Infrastructure
 The microservices are hosted on a **t3.micro** instance running Ubuntu Server. The instance is monitored and managed via AWS Console.
