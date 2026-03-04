@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import os
@@ -6,7 +7,7 @@ from contextlib import asynccontextmanager
 import numpy as np
 import onnxruntime as rt
 import pandas as pd
-import redis
+import redis.asyncio as redis  # 1. DEĞİŞİKLİK: Asenkron Redis
 from fastapi import FastAPI, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -30,13 +31,13 @@ redis_available = False
 async def lifespan(app: FastAPI):
     global model, input_name, cache, redis_available
 
-    # 1. REDIS
+    # 1. REDIS (ASYNC)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     try:
         cache = redis.Redis(
             host=REDIS_HOST, port=6379, decode_responses=True, socket_connect_timeout=1
         )
-        cache.ping()
+        await cache.ping()  # Await eklendi
         redis_available = True
         logger.info(f"✅ REDIS CONNECTED: {REDIS_HOST}")
     except Exception as e:
@@ -56,7 +57,7 @@ async def lifespan(app: FastAPI):
 
     # 3. CLEANUP
     if cache:
-        cache.close()
+        await cache.close()  # Await eklendi
     logger.info("🛑 SHUTDOWN")
 
 
@@ -70,61 +71,71 @@ def generate_cache_key(data: TaxiInput) -> str:
     return hashlib.md5(data_str.encode()).hexdigest()
 
 
+# 2. DEĞİŞİKLİK: CPU-Bound işlemleri izole eden yeni fonksiyon
+def run_inference(data_dict: dict) -> float:
+    """
+    Pandas ve ONNX gibi saf işlemci gücü isteyen ve sistemi kilitleyen
+    işlemleri Event Loop'tan ayırmak için arka planda çalıştırılır.
+    """
+    df = pd.DataFrame([data_dict])
+    df = create_features(df)
+
+    features = [
+        "passenger_count",
+        "pickup_longitude",
+        "pickup_latitude",
+        "dropoff_longitude",
+        "dropoff_latitude",
+        "month",
+        "day_of_week",
+        "hour",
+        "is_weekend",
+        "distance_haversine",
+        "distance_manhattan",
+        "bearing",
+    ]
+
+    X = df[features].astype(np.float32).to_numpy()
+
+    # Inference
+    results = model.run(None, {input_name: X})
+
+    log_pred = results[0].item()
+    return float(np.expm1(log_pred))
+
+
 @app.get("/")
 def root():
     return {"message": "NYC TAXI PREDICTION API IS LIVE"}
 
 
+# 3. DEĞİŞİKLİK: Async Endpoint
 @app.post("/predict", response_model=PredictionOutput)
-def predict(data: TaxiInput):
+async def predict(data: TaxiInput):
     if not model:
         raise HTTPException(status_code=503, detail="Model service not ready")
 
     try:
-        # 1. CACHE CHECK
+        # 1. CACHE CHECK (ASYNC)
         cache_key = generate_cache_key(data)
         if redis_available:
-            cached = cache.get(cache_key)
+            cached = await cache.get(cache_key)  # Await eklendi
             if cached:
                 logger.info("⚡ CACHE HIT")
                 return json.loads(cached)
 
-        # 2. PREDICTION
-        # Data Preparation
-        df = pd.DataFrame([data.model_dump()])
-        df = create_features(df)
-
-        features = [
-            "passenger_count",
-            "pickup_longitude",
-            "pickup_latitude",
-            "dropoff_longitude",
-            "dropoff_latitude",
-            "month",
-            "day_of_week",
-            "hour",
-            "is_weekend",
-            "distance_haversine",
-            "distance_manhattan",
-            "bearing",
-        ]
-
-        X = df[features].astype(np.float32).to_numpy()
-
-        # Inference
-        results = model.run(None, {input_name: X})
-
-        log_pred = results[0].item()
-        pred_seconds = np.expm1(log_pred)
+        # 2. PREDICTION (THREAD POOL'A GÖNDERİLİYOR)
+        # API ana damarını tıkamamak için ağır işi arka plandaki işçilere veriyoruz.
+        pred_seconds = await asyncio.to_thread(run_inference, data.model_dump())
 
         response = {
-            "predicted_duration_seconds": round(float(pred_seconds), 2),
-            "predicted_duration_minutes": round(float(pred_seconds / 60), 2),
+            "predicted_duration_seconds": round(pred_seconds, 2),
+            "predicted_duration_minutes": round(pred_seconds / 60, 2),
         }
 
-        # 3. CACHE SAVE
+        # 3. CACHE SAVE (ASYNC)
         if redis_available:
-            cache.setex(cache_key, 3600, json.dumps(response))
+            await cache.setex(cache_key, 3600, json.dumps(response))  # Await eklendi
 
         return response
 
