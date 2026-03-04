@@ -1,8 +1,10 @@
-import numpy as np
 import pandas as pd
 
-from src.utils.geo_utils import (calculate_bearing, dummy_manhattan_distance,
-                                 haversine_array)
+from src.utils.geo_utils import (
+    calculate_bearing,
+    dummy_manhattan_distance,
+    haversine_array,
+)
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)

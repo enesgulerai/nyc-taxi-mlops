@@ -1,11 +1,9 @@
 import os
 import pathlib
 
-import joblib
 import mlflow
 import mlflow.sklearn
 import numpy as np
-import pandas as pd
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.ensemble import RandomForestRegressor
@@ -14,6 +12,7 @@ from sklearn.model_selection import train_test_split
 
 from src.components.data_ingestion import load_and_clean_data
 from src.components.feature_engineering import create_features
+
 # Project Modules
 from src.config import DATA_RAW_PATH, MLFLOW_EXPERIMENT_NAME, MODEL_SAVE_PATH
 from src.utils.logger import get_logger
@@ -128,7 +127,7 @@ def run_training():
             # ---------------------------------------------------------
             # 4. EXPORT TO ONNX
             # ---------------------------------------------------------
-            logger.info(f"📦 EXPORTING ONNX MODEL...")
+            logger.info("📦 EXPORTING ONNX MODEL...")
 
             initial_type = [("float_input", FloatTensorType([None, len(features)]))]
             onnx_model = convert_sklearn(model, initial_types=initial_type)

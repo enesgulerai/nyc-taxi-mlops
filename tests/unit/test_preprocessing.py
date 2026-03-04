@@ -11,6 +11,7 @@ sys.path.append(str(PROJECT_ROOT))
 
 from src.components.feature_engineering import create_features
 
+
 class TestFeatureEngineering:
     """
     Unit Tests for the Feature Engineering component.
@@ -53,13 +54,17 @@ class TestFeatureEngineering:
         """
         Test: Does 'distance_haversine' column exist and is it logical?
         """
-        assert "distance_haversine" in processed_data.columns, "Important feature: 'distance_haversine' was not created."
+        assert "distance_haversine" in processed_data.columns, (
+            "Important feature: 'distance_haversine' was not created."
+        )
 
         distance = processed_data["distance_haversine"].iloc[0]
-        
+
         # Tip ve mantık kontrolü
         assert isinstance(distance, (float, np.floating)), "Distance must be a float."
-        assert distance > 0, "The distance was calculated as 0; check the Haversine formula."
+        assert distance > 0, (
+            "The distance was calculated as 0; check the Haversine formula."
+        )
 
     def test_time_features_structure(self, processed_data: pd.DataFrame):
         """
@@ -75,14 +80,20 @@ class TestFeatureEngineering:
         Test: Does the 'is_weekend' logic work correctly?
         """
         # Row 1: Tuesday, January 20, 2026 -> Weekday (should be 0)
-        assert processed_data.iloc[0]["is_weekend"] == 0, "Tuesday was marked as the weekend (ERROR)."
+        assert processed_data.iloc[0]["is_weekend"] == 0, (
+            "Tuesday was marked as the weekend (ERROR)."
+        )
 
         # Row 2: Saturday, January 24, 2026 -> Weekend (should be 1)
-        assert processed_data.iloc[1]["is_weekend"] == 1, "Saturday is marked as a weekday (ERROR)."
+        assert processed_data.iloc[1]["is_weekend"] == 1, (
+            "Saturday is marked as a weekday (ERROR)."
+        )
 
     def test_output_not_empty(self, processed_data: pd.DataFrame):
         """
         Test: The output should not be blank and no rows should be dropped.
         """
         assert not processed_data.empty, "The processed data returned nothing."
-        assert len(processed_data) == 2, f"Expected 2 rows, but got {len(processed_data)}."
+        assert len(processed_data) == 2, (
+            f"Expected 2 rows, but got {len(processed_data)}."
+        )

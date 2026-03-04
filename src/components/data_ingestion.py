@@ -93,7 +93,6 @@ def load_and_clean_data(filepath: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-
     REAL_DATA_PATH = os.path.join("data", "raw", "train.csv")
 
     try:

@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +7,7 @@ import pytest
 # Modern path yönetimi (pathlib)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MODEL_PATH = PROJECT_ROOT / "models" / "nyc_taxi_model.onnx"
+
 
 @pytest.fixture(scope="module")
 def shared_session() -> ort.InferenceSession:
@@ -21,6 +21,7 @@ def shared_session() -> ort.InferenceSession:
         return session
     except Exception as e:
         pytest.fail(f"Model failed to load during setup: {str(e)}")
+
 
 class TestModelArtifact:
     """
@@ -47,9 +48,11 @@ class TestModelArtifact:
         """
         inputs = shared_session.get_inputs()
         assert len(inputs) > 0, "The model has no input layer!"
-        
+
         # Input tipinin Float32 olmasını bekleriz (ML modellerinde standarttır)
-        assert inputs[0].type == 'tensor(float)', f"Unexpected input type: {inputs[0].type}"
+        assert inputs[0].type == "tensor(float)", (
+            f"Unexpected input type: {inputs[0].type}"
+        )
 
         outputs = shared_session.get_outputs()
         assert len(outputs) > 0, "The model has no output layer!"
@@ -73,12 +76,16 @@ class TestModelArtifact:
             prediction = result[0]
 
             # 1. Boyut (Shape) Kontrolü: 1 satır veri yolladık, 1 adet sonuç dönmeli
-            assert prediction.shape == (1, 1), f"Expected shape (1, 1), got {prediction.shape}"
+            assert prediction.shape == (1, 1), (
+                f"Expected shape (1, 1), got {prediction.shape}"
+            )
 
             predicted_value = prediction[0][0]
 
             # 2. Tip ve Geçerlilik Kontrolü
-            assert isinstance(predicted_value, (np.floating, float)), "Output is not a float!"
+            assert isinstance(predicted_value, (np.floating, float)), (
+                "Output is not a float!"
+            )
             assert not np.isnan(predicted_value), "Model predicted NaN!"
             assert not np.isinf(predicted_value), "Model predicted Infinity!"
 

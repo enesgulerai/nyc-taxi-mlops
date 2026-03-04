@@ -1,5 +1,4 @@
 import asyncio
-import random
 import time
 
 import aiohttp
@@ -46,7 +45,7 @@ async def send_request(session, request_id):
 
 
 async def main():
-    print(f"🚀 REDIS IS OPENING....")
+    print("🚀 REDIS IS OPENING....")
     print(f"🌊 Aim: {TOTAL_REQUESTS} request ({CONCURRENT_LIMIT} parallel connection)")
     print("-" * 50)
 
@@ -78,7 +77,7 @@ async def main():
     rps = TOTAL_REQUESTS / total_time
 
     print("-" * 50)
-    print(f"🏁 TEST COMPLETE! (REDIS RESULTS)")
+    print("🏁 TEST COMPLETE! (REDIS RESULTS)")
     print(f"⏱️ Total Duration: {total_time:.2f} seconds")
     print(f"✅ Successful Request: {success_count}/{TOTAL_REQUESTS}")
     print(f"⚡ Average Latency (Client): {avg_latency:.2f} ms")

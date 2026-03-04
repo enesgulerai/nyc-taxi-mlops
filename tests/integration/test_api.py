@@ -14,6 +14,7 @@ from src.api.main import app
 
 client = TestClient(app)
 
+
 # ---------------------------------------------------------
 # 1. ROOT ENDPOINT TEST
 # ---------------------------------------------------------
@@ -23,6 +24,7 @@ def test_root_endpoint():
     assert response.status_code == 200
     # Opsiyonel: Dönen JSON mesajını da kontrol edebilirsin
     # assert response.json() == {"status": "ok", "message": "API is running"}
+
 
 # ---------------------------------------------------------
 # 2. PREDICT ENDPOINT - CACHE HIT (REDIS DOLU)
@@ -36,7 +38,9 @@ def test_predict_cache_hit(mock_cache, mock_model):
     """
     # decode_responses=True olduğu için string dönüyoruz.
     # Şemana uygun olarak hem seconds hem minutes ekledik.
-    mock_cache.get.return_value = '{"predicted_duration_seconds": 850.5, "predicted_duration_minutes": 14.17}'
+    mock_cache.get.return_value = (
+        '{"predicted_duration_seconds": 850.5, "predicted_duration_minutes": 14.17}'
+    )
 
     payload = {
         "pickup_datetime": "2026-01-20 12:00:00",
@@ -52,9 +56,10 @@ def test_predict_cache_hit(mock_cache, mock_model):
 
     assert response.status_code == 200
     assert response.json()["predicted_duration_seconds"] == 850.5
-    
+
     # Veri cache'ten geldiyse model ASLA çalışmamalı!
     mock_model.run.assert_not_called()
+
 
 # ---------------------------------------------------------
 # 3. PREDICT ENDPOINT - CACHE MISS (REDIS BOŞ)
@@ -86,13 +91,14 @@ def test_predict_cache_miss(mock_cache, mock_model):
     response = client.post("/predict", json=payload)
 
     assert response.status_code == 200, f"API Error: {response.text}"
-    
+
     data = response.json()
     assert "predicted_duration_seconds" in data
     assert data["predicted_duration_seconds"] > 0
-    
+
     mock_model.run.assert_called_once()
-    mock_cache.setex.assert_called_once() # Cache'e yazıldığını da test etmiş olduk!
+    mock_cache.setex.assert_called_once()  # Cache'e yazıldığını da test etmiş olduk!
+
 
 # ---------------------------------------------------------
 # 4. PREDICT ENDPOINT - INVALID DATA (EDGE CASES)
@@ -102,30 +108,34 @@ def test_predict_cache_miss(mock_cache, mock_model):
     [
         # Senaryo 1: Eksik veri (Sadece datetime var)
         ({"pickup_datetime": "2026-01-20 12:00:00"}, 422),
-        
         # Senaryo 2: Yanlış Veri Tipi (passenger_count integer olmalı, string verilmiş)
-        ({
-            "pickup_datetime": "2026-01-20 12:00:00",
-            "dropoff_datetime": "2026-01-20 12:15:00",
-            "passenger_count": "bir_yolcu", 
-            "pickup_longitude": -73.9857,
-            "pickup_latitude": 40.7484,
-            "dropoff_longitude": -73.9665,
-            "dropoff_latitude": 40.7812,
-        }, 422),
-
+        (
+            {
+                "pickup_datetime": "2026-01-20 12:00:00",
+                "dropoff_datetime": "2026-01-20 12:15:00",
+                "passenger_count": "bir_yolcu",
+                "pickup_longitude": -73.9857,
+                "pickup_latitude": 40.7484,
+                "dropoff_longitude": -73.9665,
+                "dropoff_latitude": 40.7812,
+            },
+            422,
+        ),
         # Senaryo 3: Mantıksız Koordinat (Pydantic şemanda validation varsa bu 422 dönmeli)
         # Enlem (latitude) -90 ile 90 arasında olmalıdır.
-        ({
-            "pickup_datetime": "2026-01-20 12:00:00",
-            "dropoff_datetime": "2026-01-20 12:15:00",
-            "passenger_count": 1,
-            "pickup_longitude": -73.9857,
-            "pickup_latitude": 150.0000, # Hatalı enlem
-            "dropoff_longitude": -73.9665,
-            "dropoff_latitude": 40.7812,
-        }, 422),
-    ]
+        (
+            {
+                "pickup_datetime": "2026-01-20 12:00:00",
+                "dropoff_datetime": "2026-01-20 12:15:00",
+                "passenger_count": 1,
+                "pickup_longitude": -73.9857,
+                "pickup_latitude": 150.0000,  # Hatalı enlem
+                "dropoff_longitude": -73.9665,
+                "dropoff_latitude": 40.7812,
+            },
+            422,
+        ),
+    ],
 )
 def test_predict_invalid_data(invalid_payload, expected_status):
     """Farklı hatalı veri senaryolarında API'nin çökmediğini ve doğru hata kodunu döndüğünü test eder."""

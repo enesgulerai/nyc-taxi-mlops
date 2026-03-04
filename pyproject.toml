@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+]
+ignore = [
+    "E501",
+    "E402",
+    "B904",
+]
+
+[tool.ruff.format]
+quote-style = "double"
