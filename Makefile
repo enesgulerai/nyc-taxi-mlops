@@ -58,7 +58,7 @@ help:
 
 install:
 	@echo "Installing Dependencies..."
-	$(PIP) install -r requirements.txt
+	$(PIP) install -r requirements/base.txt
 	@echo "Installation Complete."
 
 ingest:

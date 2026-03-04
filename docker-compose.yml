@@ -6,9 +6,9 @@ services:
     image: nyc-taxi-mlops-api_service:latest
     build:
       context: .
-      dockerfile: src/api/Dockerfile
+      dockerfile: docker/backend/Dockerfile
     container_name: nyc_taxi_api
-    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --worker 4
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --workers 4
     ports:
       - "8000:8000"
     volumes:
@@ -27,7 +27,7 @@ services:
     image: nyc-taxi-mlops-ui_service:latest
     build:
       context: .
-      dockerfile: src/frontend/Dockerfile
+      dockerfile: docker/frontend/Dockerfile
     container_name: nyc_taxi_ui
     environment:
       - API_URL=http://api_service:8000/predict
